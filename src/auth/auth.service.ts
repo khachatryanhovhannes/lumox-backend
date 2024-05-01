@@ -78,4 +78,38 @@ export class AuthService {
       access_token: token,
     };
   }
+
+  async signWithGoogle(req) {
+    if (!req.user) {
+      return 'Invalid credentials';
+    }
+
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email: req.user.email,
+      },
+    });
+    if (user) {
+      return await this.signToken(user.id, user.email);
+    } else {
+      try {
+        const newUser = await this.prisma.user.create({
+          data: {
+            firstname: req.user.firstname,
+            lastname: req.user.lastname,
+            email: req.user.email,
+            password: '',
+          },
+        });
+        return await this.signToken(newUser.id, newUser.email);
+      } catch (error) {
+        if (error instanceof PrismaClientKnownRequestError) {
+          if (error.code === 'P2002') {
+            throw new ForbiddenException('Credentials taken!');
+          }
+        }
+        throw new Error(error);
+      }
+    }
+  }
 }

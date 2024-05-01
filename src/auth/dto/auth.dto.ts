@@ -1,11 +1,18 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString, Matches } from 'class-validator';
 
 class AuthDto {
-  @IsEmail()
+  @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
+    message: 'Invalid email address',
+  })
   @IsNotEmpty()
   email: string;
 
-  @IsString()
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$.!%*#?&])[A-Za-z\d@$!.%*#?&]{8,}$/,
+    {
+      message: 'Invalid password',
+    },
+  )
   @IsNotEmpty()
   password: string;
 
@@ -19,10 +26,18 @@ class AuthDto {
 }
 
 class SignInDto {
-  @IsEmail()
+  @Matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, {
+    message: 'Invalid email address',
+  })
   @IsNotEmpty()
   email: string;
 
+  // @Matches(
+  //   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$.!%*#?&])[A-Za-z\d@$!.%*#?&]{8,}$/,
+  //   {
+  //     message: 'Invalid password',
+  //   },
+  // )
   @IsString()
   @IsNotEmpty()
   password: string;
