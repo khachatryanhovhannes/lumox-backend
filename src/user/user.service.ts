@@ -1,12 +1,39 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
-  getMe(user: User) {
-    return user;
+  async getMe(user: User) {
+    const fullUser = await this.prisma.user.findUnique({
+      where: {
+        email: user.email,
+      },
+      include: {
+        followers: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+            // Exclude password field
+          },
+        },
+        following: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+        posts: true,
+      },
+    });
+
+    delete fullUser.password;
+    return fullUser;
   }
 
   async editMe(changeData, user: User) {
@@ -30,6 +57,37 @@ export class UserService {
     }
   }
 
+  async addImage(user: User, path: string) {
+    const newUser = await this.prisma.user.update({
+      where: {
+        email: user.email,
+      },
+      data: {
+        imagePath: path,
+      },
+    });
+
+    delete newUser.password;
+
+    return newUser;
+  }
+
+  async addBackgroundImage(user: User, path: string) {
+    console.log(path, user);
+    const newUser = await this.prisma.user.update({
+      where: {
+        email: user.email,
+      },
+      data: {
+        backgroundImagePath: path,
+      },
+    });
+
+    delete newUser.password;
+
+    return newUser;
+  }
+
   async deleteMe(user: User) {
     return await this.prisma.user.delete({
       where: {
@@ -42,6 +100,25 @@ export class UserService {
     const user = await this.prisma.user.findUnique({
       where: {
         id: parseInt(id),
+      },
+      include: {
+        followers: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+        following: {
+          select: {
+            id: true,
+            firstname: true,
+            lastname: true,
+            email: true,
+          },
+        },
+        posts: true,
       },
     });
 
@@ -76,5 +153,41 @@ export class UserService {
     const limitedUsers = sortedUsers.slice(0, limit);
 
     return limitedUsers;
+  }
+
+  async followUser(user: User, userId: number) {
+    const followerUser = await this.prisma.user.findUnique({
+      where: { id: user.id },
+    });
+    const followedUser = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!followerUser || !followedUser) {
+      throw new NotFoundException('User not found.');
+    }
+
+    // Check if the follower is trying to follow themselves
+    if (followerUser.id === followedUser.id) {
+      throw new Error('Cannot follow yourself.');
+    }
+
+    // Check if the follower is already following the user
+    const isAlreadyFollowing = await this.prisma.user.findFirst({
+      where: {
+        id: followerUser.id,
+        following: { some: { id: followedUser.id } },
+      },
+    });
+
+    if (isAlreadyFollowing) {
+      throw new Error('You are already following this user.');
+    }
+
+    // Add the followed user to the follower's following list
+    await this.prisma.user.update({
+      where: { id: followerUser.id },
+      data: { following: { connect: { id: followedUser.id } } },
+    });
   }
 }

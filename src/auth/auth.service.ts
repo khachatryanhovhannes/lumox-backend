@@ -22,6 +22,7 @@ export class AuthService {
           lastname: dto.lastname,
           email: dto.email,
           password: hash,
+          imagePath: '',
         },
       });
 
@@ -98,6 +99,7 @@ export class AuthService {
             firstname: req.user.firstname,
             lastname: req.user.lastname,
             email: req.user.email,
+            imagePath: '',
             password: '',
           },
         });

@@ -23,6 +23,9 @@ class AuthDto {
   @IsString()
   @IsNotEmpty()
   lastname: string;
+
+  // @IsString()
+  // imagePath: string;
 }
 
 class SignInDto {
@@ -32,12 +35,12 @@ class SignInDto {
   @IsNotEmpty()
   email: string;
 
-  // @Matches(
-  //   /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$.!%*#?&])[A-Za-z\d@$!.%*#?&]{8,}$/,
-  //   {
-  //     message: 'Invalid password',
-  //   },
-  // )
+  @Matches(
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$.!%*#?&])[A-Za-z\d@$!.%*#?&]{8,}$/,
+    {
+      message: 'Invalid password',
+    },
+  )
   @IsString()
   @IsNotEmpty()
   password: string;
